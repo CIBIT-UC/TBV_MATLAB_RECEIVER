@@ -1,6 +1,7 @@
 %% Config
 clear, clc;
 addpath('utils')
+addpath('functions')
 
 %% Create Connection
 
@@ -22,187 +23,65 @@ for i=1:n_rois
 end
 
 %% Configs
-timePoint = 100; %To iterate after
 [xDim, yDim, zDim] = tbvNetInt.tGetDimsOfFunctionalData();
-
-%% Method 1 - TBV
-tic
-
-ROImeansM1 = zeros(1,n_rois);
-
-for i=1:n_rois
-    ROImeansM1(i) = tbvNetInt.tGetMeanOfROIAtTimePoint( i, timePoint );
-end
-
-timeM1 = toc;
-
-%% Method 2 - All Voxels
-tic
-
-voxelsValsM2 = tbvNetInt.tGetValueOfAllVoxelsAtTime( timePoint );
-% voxelsMatrix = reshape(voxelsVals, [zDim yDim xDim]);
-
-ROImeansM2 = zeros(1,n_rois);
-
-for i=1:n_rois
-    
-   ROImeansM2(i) = mean( voxelsValsM2(coordsOfVoxelsOfROI{i}(:,3)*xDim*yDim ...
-       + coordsOfVoxelsOfROI{i}(:,2)*xDim + coordsOfVoxelsOfROI{i}(:,1) + 1) );
-    
-end
-
-timeM2 = toc;
-
-%% Method 3 - All Raw Voxels
-tic
-
-voxelsValsM3 = tbvNetInt.tGetRawValueOfAllVoxelsAtTime( timePoint );
-
-ROImeansM3 = zeros(1,n_rois);
-
-for i=1:n_rois
-    
-   ROImeansM3(i) = mean( voxelsValsM3(coordsOfVoxelsOfROI{i}(:,3)*xDim*yDim ...
-       + coordsOfVoxelsOfROI{i}(:,2)*xDim + coordsOfVoxelsOfROI{i}(:,1) + 1) );
-    
-end
-
-timeM3 = toc;
-
-%% Method 4 - Voxels 1by1
-tic
-
-ROImeansM4 = zeros(1,n_rois);
-
-for i=1:n_rois
-    
-    temp = zeros(1,size(coordsOfVoxelsOfROI{i},1));
-    for j=1:size(coordsOfVoxelsOfROI{i},1)
-        
-        temp(j) = tbvNetInt.tGetValueOfVoxelAtTime(coordsOfVoxelsOfROI{i}(j,1) ...
-            ,coordsOfVoxelsOfROI{i}(j,2),coordsOfVoxelsOfROI{i}(j,3),timePoint);
-    end
-    
-    ROImeansM4(i) = mean( temp );
-    
-end
-
-timeM4 = toc;
 
 %% Time iteration
 
 time = 1;
-counter = 1;
+counter = 0;
+
 currentTime = tbvNetInt.tGetCurrentTimePoint;
 expectedTime = tbvNetInt.tGetExpectedNrOfTimePoints;
 
+ROImeansM1 = zeros(expectedTime,n_rois);
+ROImeansM2 = zeros(expectedTime,n_rois);
+ROImeansM3 = zeros(expectedTime,n_rois);
 ROImeansM4 = zeros(expectedTime,n_rois);
+
+timeM1 = zeros(expectedTime,1);
+timeM2 = zeros(expectedTime,1);
+timeM3 = zeros(expectedTime,1);
+timeM4 = zeros(expectedTime,1);
 
 while time <= currentTime
     
-    if time == currentTime
-        pause(0.5)
+    if time == currentTime && currentTime ~= expectedTime
+        disp('Waiting...')
+        pause(5)
         counter = counter + 1;
         if counter == 5
             break;
         end
         
     else
+        %---Method 1 --> Get Mean ROI
+        [ROImeansM1(time,:),timeM1(time)] = method1(n_rois,tbvNetInt,time-1);
+        
+        %---Method 2 --> All Voxels
+        [ROImeansM2(time,:),timeM2(time)] = method2(n_rois,tbvNetInt,coordsOfVoxelsOfROI,xDim,yDim,time-1);
+        
+        %---Method 3 --> All Voxels Raw
+        [ROImeansM3(time,:),timeM3(time)] = method3(n_rois,tbvNetInt,coordsOfVoxelsOfROI,xDim,yDim,time-1);
+        
+        %---Method 4 --> Voxels 1by1
+        [ROImeansM4(time,:),timeM4(time)] = method4(n_rois,tbvNetInt,coordsOfVoxelsOfROI,time-1);
+        
+        fprintf('Time %d \n',time);
+        
         time = time + 1;
-        
-        %Methods
-
-        for i=1:n_rois
-            
-            temp = zeros(1,size(coordsOfVoxelsOfROI{i},1));
-            for j=1:size(coordsOfVoxelsOfROI{i},1)
-                
-                temp(j) = tbvNetInt.tGetValueOfVoxelAtTime(coordsOfVoxelsOfROI{i}(j,1) ...
-                    ,coordsOfVoxelsOfROI{i}(j,2),coordsOfVoxelsOfROI{i}(j,3),time);
-            end
-            
-            ROImeansM4(time,i) = mean( temp );
-            
-        end
-        
-        
+        counter = 0;
     end
     
-    
+    currentTime = tbvNetInt.tGetCurrentTimePoint;
     
 end
 
+%% Plots
 
+timeaxis = 1:expectedTime;
+figure()
+    plot(timeaxis,timeM1,'--o',timeaxis,timeM2,'--o', ... 
+        timeaxis,timeM3,'--o',timeaxis,timeM4,'--o')
+    grid on; xlim([1 expectedTime]);
+    legend('Method 1','Method 2','Method 3','Method 4');
 
-% 
-% 
-% %% Correlations from TBV
-% 
-% n_rois = tbvNetInt.tGetNrOfROIs();
-% n_con = (n_rois*(n_rois-1))/2; % #Connections
-% 
-% windowSize = 30;
-% timePoint = 100;
-% 
-% [wSize, pearsonC] = tbvNetInt.tGetPearsonCorrelation(windowSize);
-% fprintf('---> Pearson Correlation with window size %d = %f %f %f \n',wSize,pearsonC)
-% 
-% [wSize , tPoint , pearsonC_t] = tbvNetInt.tGetPearsonCorrelationAtTimePoint(windowSize,timePoint);
-% fprintf('---> Pearson Correlation at time point %d, window size %d = %f %f %f \n',wSize,tPoint,pearsonC_t)
-% 
-% [wSize, partialC] = tbvNetInt.tGetPartialCorrelation(windowSize);
-% fprintf('---> Partial Correlation with window size %d = %f %f %f \n',wSize,partialC)
-% 
-% [wSize , tPoint , partialC_t] = tbvNetInt.tGetPartialCorrelationAtTimePoint(windowSize,timePoint);
-% fprintf('---> Partial Correlation at time point %d, window size %d = %f %f %f \n',wSize,tPoint,partialC_t)
-% 
-% %% Fig 1
-% figure()
-%     plot(pearsonC_t,'o'); hold on
-%     plot(partialC_t,'o'); hold on
-%     xlim([0 4]); ylim([-1 1]); grid on;
-%     legend('Pearson','Partial','Location','Southwest')
-%     
-% %% Correlations from ROI Means
-% clear roi1 roi2 ROIcorr
-% 
-% ROIcorr = zeros(n_con,1);
-% 
-% C = combnk(1:n_con,2);
-% 
-% for c=1:n_con
-%     roi1 = zeros(windowSize,1);
-%     roi2 = zeros(windowSize,1);
-%     idx = 1;
-%     for i=timePoint-windowSize-1:timePoint
-%         roi1(idx) = tbvNetInt.tGetMeanOfROIAtTimePoint(C(c,1),i);
-%         roi2(idx) = tbvNetInt.tGetMeanOfROIAtTimePoint(C(c,2),i);
-%         idx = idx+1;
-%     end
-%     ROIcorr(c) = corr(roi1,roi2);
-%     
-% end
-% 
-% %% Real time
-% i = 1;
-% currentTime = tbvNetInt.tGetCurrentTimePoint;
-% 
-% while i < currentTime
-%     
-%     if i ~= currentTime
-%         [~ , ~ , RTpearson(i,:)] = tbvNetInt.tGetPearsonCorrelationAtTimePoint(windowSize,i);
-%         i = i+1;
-%     else
-%         pause(0.5)
-%     end
-% 
-% end
-% 
-% %% Fig 2
-% figure()
-%     plot(RTpearson(:,1),'--o'); hold on
-%     plot(RTpearson(:,2),'--o'); hold on
-%     plot(RTpearson(:,3),'--o'); hold on
-%     grid on;
-%     legend('ROI 12','ROI 13','ROI 23','Location','Southwest')
-%     

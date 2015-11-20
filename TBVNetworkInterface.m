@@ -627,20 +627,17 @@ classdef TBVNetworkInterface < handle
             [rOK, aOK, tResponse]= obj.tbvClient.queryVolumeData('tGetValueOfAllVoxelsAtTime', output);
             
             TimeCourseData = [];
+            tResponse (1:4) = []; 
             
-            idx = 1;
+            tResp_swap = zeros(size(tResponse));
+            tResp_swap (2:2:end) = tResponse(1:2:end);
+            tResp_swap (1:2:end) = tResponse(2:2:end);
             
-            for i = 5:2:length(tResponse)-1
+            valVoxel = typecast(int8(tResp_swap), 'int16');
                 
-                valVoxel(idx) = typecast(int8([tResponse(i+1) tResponse(i)]), 'int16');
-                
-                idx = idx + 1;
-            end
-            
             valueOfAllVoxelsAtTime = valVoxel;
             
-            
-            
+             
         end
         
         
@@ -659,18 +656,14 @@ classdef TBVNetworkInterface < handle
             
             [rOK, aOK, tResponse]= obj.tbvClient.queryVolumeData('tGetRawValueOfAllVoxelsAtTime', output);
             
-            
             RawValueTimeCourseData = [];
             
-            idx = 1;
-            
-            for i = 1:2:length(tResponse)
+            tResp_swap = zeros(size(tResponse));
+            tResp_swap (2:2:end) = tResponse(1:2:end);
+            tResp_swap (1:2:end) = tResponse(2:2:end);
+               
+            rawValVoxel = typecast(int8(tResp_swap), 'uint16');
                 
-                rawValVoxel(idx) = typecast(int8([tResponse(i+1) tResponse(i)]), 'uint16');
-                
-                idx = idx + 1;
-            end
-            
             RawValueTimeCourseData = rawValVoxel;
         end
         

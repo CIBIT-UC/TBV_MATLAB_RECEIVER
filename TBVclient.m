@@ -79,7 +79,7 @@ classdef TBVclient < handle
             rOK = obj.sendRequest('Request Socket');
             [rOK, message] =  obj.getMessage();
             
-            fprintf(1, ' --- request socket open: %i\n\n', rOK);
+%             fprintf(1, ' --- request socket open: %i\n\n', rOK);
             
             %             %--------------------------
             %             % OPEN Execute Socket
@@ -141,7 +141,7 @@ classdef TBVclient < handle
                     
                     [aOK, message] =  obj.getMessage();
                 else
-                    fprintf(1, ' --- request %s WAS NOT sent.\n', request);
+%                     fprintf(1, ' --- request %s WAS NOT sent.\n', request);
                 end
             catch error
                 error
@@ -185,7 +185,7 @@ classdef TBVclient < handle
                     
                     [aOK, message] =  obj.getVolumeDataMessage(request);
                 else
-                    fprintf(1, ' --- request %s WAS NOT sent.\n', request);
+%                     fprintf(1, ' --- request %s WAS NOT sent.\n', request);
                 end
             catch error
                 error
@@ -282,7 +282,7 @@ classdef TBVclient < handle
                     end
                     
                     pause(.1);
-                    disp('waiting...')
+%                     disp('waiting...')
                     
                     % breaks if too much time passed
                     counter = counter + 1;
@@ -301,7 +301,7 @@ classdef TBVclient < handle
                 
                 
                 msgSize = byteToNum(msgSize);
-                fprintf(1, '\n - message size - %d\n',msgSize);
+%                 fprintf(1, '\n - message size - %d\n',msgSize);
                 
                 
                 % read message size
@@ -313,7 +313,7 @@ classdef TBVclient < handle
                     end
                     
                     pause(.1);
-                    disp('waiting...')
+%                     disp('waiting...')
                     
                     % breaks if too much time passed
                     counter = counter + 1;
@@ -329,7 +329,7 @@ classdef TBVclient < handle
                     message(i) = typecast(int8(obj.rInputReqStream.readByte()), 'uint8');
                 end
                 
-                fprintf(1, '\n - message received - %s\n',message);
+%                 fprintf(1, '\n - message received - %s\n',message);
                 
                 % the response is returned as uint8
                 [requestSize, request, response] = obj.decodeMessage(message);
@@ -376,7 +376,7 @@ classdef TBVclient < handle
                     end
                     
                     pause(.1);
-                    disp('waiting...')
+%                     disp('waiting...')
                     
                     % breaks if too much time passed
                     counter = counter + 1;
@@ -394,7 +394,7 @@ classdef TBVclient < handle
                 
                 %fprintf(1, '\n - message size - %s\n',msgSize);
                 msgSize = byteToNum(msgSize);
-                fprintf(1, '\n - message size - %d\n',msgSize);
+%                 fprintf(1, '\n - message size - %d\n',msgSize);
                 
                 
                 %                 % read message size

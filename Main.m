@@ -19,7 +19,7 @@ n_rois = tbvNetInt.tGetNrOfROIs();
 coordsOfVoxelsOfROI = cell([1 n_rois]);
 
 for i=1:n_rois
-    coordsOfVoxelsOfROI{i} = tbvNetInt.tGetAllCoordsOfVoxelsOfROI(i);
+    coordsOfVoxelsOfROI{i} = tbvNetInt.tGetAllCoordsOfVoxelsOfROI(i - 1);
 end
 
 %% Configs

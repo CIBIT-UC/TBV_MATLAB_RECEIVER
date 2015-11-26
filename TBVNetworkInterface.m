@@ -1,4 +1,5 @@
-% tbvNetworkInterface - Interface class between client and TBV server
+% tbvNetworkInterface - MATLAB Interface class between TBVclient and TBV
+%                           network plugin 1.7
 %
 % Usage:
 %   >> obj = tbvNetworkInterface (OutputStream, InputStream)
@@ -6,14 +7,24 @@
 % properties:
 %
 %
-% Author(s): Bruno Direito, Jo?o Lima, Marco Sim?es, IBILI, 12 May 2014
+% Author(s):    Bruno Direito <migueldireito@gmail.com>,
+%               João Lima <joaoflima@gmail.com>,
+%               Marco Simões <marcoamsimoes@gmail.com>,
+%               Alexandre Sayal <alexandresayal@gmail.com>
+%
+% Created: IBILI, 2014/05/12
+%
+% Revision 1.0  2015/11/24
+% added Volume Data Access Queries
+%
+
+
 
 classdef TBVNetworkInterface < handle
     
     %% Properties
     properties (SetAccess = private)
         tbvClient
-        
     end
     
     
@@ -24,7 +35,6 @@ classdef TBVNetworkInterface < handle
         function obj = TBVNetworkInterface (tbvClient)
             obj.tbvClient = tbvClient;
         end
-        
         
         function createConnection(obj)
             obj.tbvClient.createConnection();
@@ -52,13 +62,23 @@ classdef TBVNetworkInterface < handle
             %       returns "1" not "0"; this is important when the return value is used to access time-related
             %       information; in this case subtract "1" from the returned value.
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetCurrentTimePoint');
             
-            %  int CurrentTimePoint
-            CurrentTimePoint = byteToNum(tResponse);
             
-            %             fprintf(1, '\n - answer received - message: %i \n\n',time_temp);
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetCurrentTimePoint');
+            
+            if (reqOK && ansOK)
+                
+                %  int CurrentTimePoint
+                CurrentTimePoint = byteToNum(tResponse);
+                
+                % fprintf(1, '\n - answer received - message: %i
+                % \n\n',time_temp); %debug
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
+            
+            
             
         end
         
@@ -69,13 +89,18 @@ classdef TBVNetworkInterface < handle
             %       since a real-time run might be interrupted by the user, i.e. this is the intended number of
             %       volumes as specified in the TBV settings file.
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetExpectedNrOfTimePoints' );
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetExpectedNrOfTimePoints' );
             
-            % NrOfTimePoints
-            NrOfTimePoints = byteToNum(tResponse);
-            
-            %             fprintf(1, '\n - answer received - message: %i \n\n', expTimePnts);
+            if (reqOK && ansOK)
+                
+                %  int NrOfTimePoints
+                NrOfTimePoints = byteToNum(tResponse);
+                %  fprintf(1, '\n - answer received - message: %i \n\n',
+                %  expTimePnts); % debug
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
         
@@ -86,23 +111,28 @@ classdef TBVNetworkInterface < handle
             %       and "dim_y" are the dimensions of the slices constituting the...
             %       volume and "dim_z" corresponds to the number of slices.
             
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetDimsOfFunctionalData' );
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetDimsOfFunctionalData' );
             
-            % dim_x
-            dim_x = byteToNum(tResponse(1:4));
-            tResponse(1:4) = [];
             
-            % dim_y
-            dim_y = byteToNum(tResponse(1:4));
-            tResponse(1:4) = [];
-            
-            % dim_z
-            dim_z = byteToNum(tResponse(1:4));
-            tResponse(1:4) = [];
+            if (reqOK && ansOK)
+                
+                % 4-byte dim_x
+                dim_x = byteToNum(tResponse(1:4));
+                tResponse(1:4) = [];
+                
+                % 4-byte dim_y
+                dim_y = byteToNum(tResponse(1:4));
+                tResponse(1:4) = [];
+                
+                % 4-byte dim_z
+                dim_z = byteToNum(tResponse(1:4));
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
-        
-        
         
         function projectName = tGetProjectName(obj)
             %   Send: tGetProjectName
@@ -113,21 +143,26 @@ classdef TBVNetworkInterface < handle
             %       The returned name can, for example, be used as part of names identifying...
             %       exported data.
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetProjectName');
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetProjectName');
             
-            
-            % message size
-            messageSize = byteToNum(tResponse(1:4));
-            tResponse(1:4) = [];
-            
-            % char[100] cProjectName
-            projectName = char(tResponse);
-            
-            %             fprintf(1, '\n - answer received - message: %s \n\n', projectName);
+            if (reqOK && ansOK)
+                % message size
+                messageSize = byteToNum(tResponse(1:4));
+                tResponse(1:4) = [];
+                
+                % char[100] cProjectName
+                projectName = char(tResponse(1:messageSize));
+                
+                %  fprintf(1, '\n - answer received - message: %s \n\n',
+                %  projectName); %debug
+                
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
-        
         
         function cWatchFolder = tGetWatchFolder(obj)
             %   Send: tGetWatchFolder
@@ -137,17 +172,22 @@ classdef TBVNetworkInterface < handle
             %       pre-allocated array that is large enough for the returned path...
             %       (a buffer of 513 bytes is recommended).
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetWatchFolder' );
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetWatchFolder' );
             
-            % message size
-            messageSize = byteToNum(tResponse(1:4));
-            tResponse(1:4) = [];
-            
-            cWatchFolder = char(tResponse);
-            
-            %             fprintf(1, '\n - answer received - message: %s \n\n', watchFolder);
-            
+            if (reqOK && ansOK)
+                
+                % message size
+                messageSize = byteToNum(tResponse(1:4));
+                tResponse(1:4) = [];
+                
+                cWatchFolder = char(tResponse(1:messageSize));
+                
+                % fprintf(1, '\n - answer received - message: %s \n\n',
+                % watchFolder); % debug
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
         
@@ -160,21 +200,24 @@ classdef TBVNetworkInterface < handle
             %       recommended). The target folder can be used to export data for custom processing.
             
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetTargetFolder' );
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetTargetFolder' );
             
+            if (reqOK && ansOK)
+                % message size
+                messageSize = byteToNum(tResponse(1:4));
+                tResponse(1:4) = [];
+                
+                cTargetFolder = char(tResponse(1:messageSize));
+                %  fprintf(1, '\n - answer received - message: %s \n\n',
+                %  cTargetFolder); %debug
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
-            % message size
-            messageSize = byteToNum(tResponse(1:4));
-            tResponse(1:4) = [];
-            
-            cTargetFolder = char(tResponse);
-            
-            %             fprintf(1, '\n - answer received - message: %s \n\n', cTargetFolder);
             
         end
-        
-        
         
         function feedbackFolder = tGetFeedbackFolder(obj)
             %   Send: tGetFeedbackFolder
@@ -186,16 +229,23 @@ classdef TBVNetworkInterface < handle
             %       used to store the result of custom calculations, e.g. providing...
             %       custom input for the "Presenter" software tool.
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetFeedbackFolder' );
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetFeedbackFolder' );
             
-            % message size
-            messageSize = byteToNum(tResponse(1:4));
-            tResponse(1:4) = [];
+            if (reqOK && ansOK)
+                % message size
+                messageSize = byteToNum(tResponse(1:4));
+                tResponse(1:4) = [];
+                
+                feedbackFolder = char(tResponse(1:messageSize));
+                
+                % fprintf(1, '\n - answer received - message: %s \n\n',
+                % feedbackFolder); % debug
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
-            feedbackFolder = char(tResponse);
-            
-            % fprintf(1, '\n - answer received - message: %s \n\n', feedbackFolder);
             
         end
         
@@ -205,17 +255,20 @@ classdef TBVNetworkInterface < handle
         
         function CurrentProtocolCondition = tGetCurrentProtocolCondition(obj)
             %   Send: tGetCurrentProtocolCondition
-            %   Receive: int CurremtProtocolCondition
+            %   Receive: int CurrentProtocolCondition (zero-index)
             %   TODO detailed description
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetCurrentProtocolCondition');
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetCurrentProtocolCondition');
             
-            %  int NrOfROIs
-            CurrentProtocolCondition = byteToNum(tResponse) + 1;
-            
-            
-            %             fprintf(1, '\n - answer received - message: %i \n\n', CurrentProtocolCondition);
+            if (reqOK && ansOK)
+                CurrentProtocolCondition = byteToNum(tResponse);
+                
+                %  fprintf(1, '\n - answer received - message: %i \n\n',
+                %  CurrentProtocolCondition); % debug
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
         
@@ -226,14 +279,21 @@ classdef TBVNetworkInterface < handle
             %       predictors while the "tGetCurrentNrOfPredictors" returns
             %       the number of predictors currently in use.
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetFullNrOfPredictors');
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetFullNrOfPredictors');
             
-            %  int NrOfROIs
-            fullNrOfPredictors = byteToNum(tResponse);
+            if (reqOK && ansOK)
+                
+                fullNrOfPredictors = byteToNum(tResponse);
+                
+                % fprintf(1, '\n - answer received - message: %i \n\n',
+                % CurrentProtocolCondition); %debug
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
             
-            %             fprintf(1, '\n - answer received - message: %i \n\n', CurrentProtocolCondition);
             
         end
         
@@ -247,14 +307,18 @@ classdef TBVNetworkInterface < handle
             %       Roughly speaking, the number of current predictors increases each time
             %       when a new condition is encountered during real-time processing.
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetCurrentNrOfPredictors');
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetCurrentNrOfPredictors');
             
-            %  int NrOfROIs
-            currentNrOfPredictors = byteToNum(tResponse);
+            if (reqOK && ansOK)
+                
+                currentNrOfPredictors = byteToNum(tResponse);
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
+            
             
         end
-        
         
         function nrOfConfoundPredictors = tGetNrOfConfoundPredictors(obj)
             %   Receive: int nrOfConfoundPredictors
@@ -262,12 +326,16 @@ classdef TBVNetworkInterface < handle
             %       number of predictors-of-interest, subtract the returned value from the
             %       "tGetFullNrOfPredictors" or "tGetCurrentNrOfPredictors" function, respectively.
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetNrOfConfoundPredictors');
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetNrOfConfoundPredictors');
             
-            %  int NrOfROIs
-            nrOfConfoundPredictors = byteToNum(tResponse);
-            
+            if (reqOK && ansOK)
+                %  int nrOfConfoundPredictors
+                nrOfConfoundPredictors = byteToNum(tResponse);
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
         end
         
         
@@ -282,23 +350,34 @@ classdef TBVNetworkInterface < handle
             %       Note that the "timepoint" parameter must be smaller than the value
             %       returned by the "tGetCurrentTimePoint" query
             
-            % send int roi
+            % output var - int pred, roi
+            output = cell(0);
+            
             output(1) = {pred};
             output(2) = {timepoint};
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetValueOfDesignMatrix' , output);
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetValueOfDesignMatrix', output);
             
-            % int ROI
-            pred = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
+            if (reqOK && ansOK)
+                % int pred
+                pred = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % int timepoint
+                timepoint = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % float valueOfDesignMatrix
+                %%%%%%%%valueOfDesignMatrix = typecast(uint8(tResponse(4:-1:1)), 'single');
+                
+                valueOfDesignMatrix = byteToFloat( tResponse );
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
-            % int beta
-            timepoint = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
             
-            % float betaOfROI
-            valueOfDesignMatrix = typecast(uint8(tResponse(4:-1:1)), 'single');
             
         end
         
@@ -308,18 +387,21 @@ classdef TBVNetworkInterface < handle
             %       in the TBV settings file. This value is important for accessing t maps,
             %       see the "tGetMapValueOfVoxel" and "tGetContrastMaps" queries.
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetNrOfContrasts');
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetNrOfContrasts');
             
-            %  int NrOfROIs
-            nrOfContrasts = byteToNum(tResponse);
+            if (reqOK && ansOK)
+                %  int nrOfContrasts
+                nrOfContrasts = byteToNum( tResponse );
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
         
         % --------------------
         %% ROI queries
         % --------------------
-        
         
         function NrOfROIs = tGetNrOfROIs(obj)
             %   Send: tGetNrOfROIs
@@ -330,14 +412,15 @@ classdef TBVNetworkInterface < handle
             %       It is thus important to use this function prior to other functions...
             %       accessing ROI information.
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetNrOfROIs');
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetNrOfROIs');
             
-            %  int NrOfROIs
-            NrOfROIs = byteToNum(tResponse);
-            
-            
-            %             fprintf(1, '\n - answer received - message: %i \n\n', NrOfROIs);
+            if (reqOK && ansOK)
+                %  int NrOfROIs
+                NrOfROIs = byteToNum(tResponse);
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
         
@@ -353,12 +436,14 @@ classdef TBVNetworkInterface < handle
             %       when ROIs are not changed, i.e. when a set of ROIs is pre-loaded ...
             %       for a neurofeedback study.
             
+            % output var - int pred, roi
+            output = cell(0);
             
             % define output variable according to user guide
-            output(1) = {nrOfROI-1};
+            output(1) = {nrOfROI};
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetMeanOfROI' , output);
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetMeanOfROI' , output);
             
             if numel(tResponse) ~=8
                 % Find error
@@ -368,18 +453,25 @@ classdef TBVNetworkInterface < handle
                 end
             end
             
-            % int ROI
-            nrOfROI =byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
             
-            % float MeanOfROI
-            meanOfROI = typecast(uint8(tResponse(4:-1:1)), 'single');
-            
-            % fprintf(1, '\n - answer received - message: ROI # %i, meanvalue - %i \n\n',nrOfROI, meanOfROI);
+            if (reqOK && ansOK)
+                % int nrOfROI
+                nrOfROI = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % float MeanOfROI
+                % meanOfROI = typecast(uint8(tResponse(4:-1:1)), 'single');
+                
+                meanOfROI = byteToFloat( tResponse );
+                
+                % fprintf(1, '\n - answer received - message: ROI # %i, meanvalue - %i \n\n',nrOfROI, meanOfROI);
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
         
-        function  [meanOfROI, timePnt] = tGetMeanOfROIAtTimePoint(obj, nrOfROI, timePntRequested)
+        function  [meanOfROI, nrOfROI, timePnt] = tGetMeanOfROIAtTimePoint(obj, nrOfROI, timePntRequested)
             %   Send: tGetMeanOfROIAtTimePoint, int roi, int toTimePoint
             %   Receive: int roi, int toTimePoint, float MeanOfROIAtTimePoint
             %   Returns the mean signal value of the ROI referenced with the...
@@ -393,12 +485,15 @@ classdef TBVNetworkInterface < handle
             %       The query should be used in situations when ROIs are not changed,...
             %       i.e. when a set of ROIs is pre-loaded for a neurofeedback study.
             
+            % output var - int roi, timePnt
+            output = cell(0);
+            
             % define output variable according to user guide
-            output(1) = {nrOfROI-1};
+            output(1) = {nrOfROI};
             output(2) = {timePntRequested};
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetMeanOfROIAtTimePoint' , output);
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetMeanOfROIAtTimePoint' , output);
             
             if numel(tResponse)~=12
                 % Find error
@@ -408,21 +503,26 @@ classdef TBVNetworkInterface < handle
                 end
             end
             
+            if (reqOK && ansOK)
+                % int ROI
+                nrOfROI = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % int toTimePoint
+                timePnt = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % float MeanOfROIAtTimePoint
+                %%%meanOfROI = typecast(uint8(tResponse(4:-1:1)), 'single');
+                meanOfROI = byteToFloat( tResponse );
+                
+                % fprintf(1, '\n - answer received - message: ROI # %i,
+                % meanvalue - %i \n\n',nrOfROI, meanOfROI); % debug
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
-            % int ROI
-            nrOfROI = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
-            
-            % int toTimePoint
-            timePnt = byteToNum(tResponse(1:4)); % zero index-based
-            tResponse(1:4) = [];
-            
-            
-            % float MeanOfROIAtTimePoint
-            meanOfROI = typecast(uint8(tResponse(4:-1:1)), 'single');
-            
-            
-            %             fprintf(1, '\n - answer received - message: ROI # %i, meanvalue - %i \n\n',nrOfROI, meanOfROI);
             
         end
         
@@ -434,26 +534,31 @@ classdef TBVNetworkInterface < handle
             %       user replaces a ROI with another set of voxels. The value of this query...
             %       is important for accessing information of individual ROI voxels (see below).
             
-            % send int roi
-            output(1) = {nrOfROI-1};
+            % output var - int roi
+            output = cell(0);
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetNrOfVoxelsOfROI' , output);
+            % define output variable according to user guide
+            output(1) = {nrOfROI};
             
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetNrOfVoxelsOfROI' , output);
             
-            
-            nrROI = byteToNum(tResponse(1:4)) + 1;
-            tResponse(1:4) = [];
-            
-            NrOfVoxelsOfROI = byteToNum(tResponse);
-            
-            
-            %   fprintf(1, '\n - answer received - message: ROI # %i, value - %i \n\n',nrROI, nrVoxOfROI);
-            
+            if (reqOK && ansOK)
+                
+                nrROI = byteToNum(tResponse(1:4));
+                tResponse(1:4) = [];
+                
+                NrOfVoxelsOfROI = byteToNum( tResponse);
+                %   fprintf(1, '\n - answer received - message: ROI # %i, value - %i \n\n',nrROI, nrVoxOfROI);
+                
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
         
-        function betaOfROI = tGetBetaOfROI(obj, nrOfROI, beta)
+        function [betaOfROI, nrOfROI, beta] = tGetBetaOfROI(obj, nrOfROI, beta)
             %   Send: tGetBetaOfROI, int roi, int beta
             %   Receive: int roi, int beta, float betaOfROI
             %   Retrieves the value of a specified beta (0-based index) of the specified ROI
@@ -463,28 +568,37 @@ classdef TBVNetworkInterface < handle
             %       of predictors; to retrieve only the betas of the predictors of interest,
             %       the beta index must be smaller than "tGetFullNrOfPredictors" minus "tGetNrOfConfoundPredictors".
             
-            % send int roi
-            output(1) = {nrOfROI-1};
+            % output var - int roi
+            output = cell(0);
+            
+            % send int roi, beta
+            output(1) = {nrOfROI};
             output(2) = {beta};
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetBetaOfROI' , output);
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetBetaOfROI' , output);
             
-            % int ROI
-            nrOfROI = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
             
-            % int beta
-            beta = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
-            
-            % float betaOfROI
-            betaOfROI = typecast(uint8(tResponse(4:-1:1)), 'single');
-            
+            if (reqOK && ansOK)
+                
+                % int ROI
+                nrOfROI = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % int beta
+                beta = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % float betaOfROI
+                betaOfROI = byteToFloat(tResponse);
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
         
-        function [x, y, z] = tGetCoordsOfVoxelOfROI(obj, nrOfROI, voxel)
+        function [x, y, z, nrOfROI, roi] = tGetCoordsOfVoxelOfROI(obj, nrOfROI, voxel)
             %   Send: tGetBetaOfROI, int roi, int voxel
             %   Receive: int roi, int voxel, int x, int y, int z
             %   Provides the coordinates of a voxel (0-based enumeration index)
@@ -494,38 +608,47 @@ classdef TBVNetworkInterface < handle
             %       since ROIs content may change, use the latter function for a
             %       specific ROI index always before using the current function.
             
+            % output var - int roi
+            output = cell(0);
+            
             % send int roi
-            output(1) = {nrOfROI-1};
+            output(1) = {nrOfROI};
             output(2) = {voxel};
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetCoordsOfVoxelOfROI' , output);
             
-            % int ROI
-            nrOfROI = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetCoordsOfVoxelOfROI' , output);
             
-            % int voxel
-            roi = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
+            if (reqOK && ansOK)
+                % int ROI
+                nrOfROI = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % int voxel
+                roi = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % int x
+                x = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % int y
+                y = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % int z
+                z = byteToNum(tResponse(1:4)); % zero index-based
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
-            % int x
-            x = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
-            
-            % int y
-            y = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
-            
-            % int z
-            z = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
             
         end
         
         
         
-        function coordsOfVoxelsOfROI = tGetAllCoordsOfVoxelsOfROI(obj, nrOfROI)
+        function [coordsOfVoxelsOfROI, nrOfROI] = tGetAllCoordsOfVoxelsOfROI(obj, nrOfROI)
             %   Send: tGetBetaOfROI, int roi
             %   Receive: int roi, coordsOfVoxelsOfROI
             %   Provides the coordinates of all voxels of the ROI specified with the
@@ -536,32 +659,33 @@ classdef TBVNetworkInterface < handle
             %       to be accessed, use the term
             %       "x_coord = voxel_roi+0; y_coord = voxel_roi+1; z_coord = voxel_roi+2".
             
+            % output var
+            output = cell(0);
+            
             % send int roi
-            output(1) = {nrOfROI-1};
+            output(1) = {nrOfROI};
             
-            % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetAllCoordsOfVoxelsOfROI' , output);
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetAllCoordsOfVoxelsOfROI' , output);
             
-            % int ROI
-            nrOfROI = byteToNum(tResponse(1:4)) + 1; % zero index-based
-            tResponse(1:4) = [];
             
-            % number of voxels
-            numOfVoxels = length(tResponse) / 4 ;
-            
-            % int []
-            % %             for i = 1:numOfVoxels/3
-            % %                 for j = 1:3 % three axes
-            % %                     coordsOfVoxelsOfROI(i,j)= byteToNum(tResponse(1:4)) + 1; % zero index-based
-            % %                     tResponse(1:4) = [];
-            % %                 end
-            % %             end
-            
-            for i = 1:numOfVoxels/3
-                for j = 1:3 % three axes
-                    coordsOfVoxelsOfROI(i,j)= typecast(uint8(tResponse(4:-1:1)), 'int32'); % zero index-based
-                    tResponse(1:4) = [];
+            if (reqOK && ansOK)
+                % int ROI
+                nrOfROI = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                % number of voxels
+                numOfVoxels = length(tResponse) / 4 ;
+                
+                for i = 1:numOfVoxels/3
+                    for j = 1:3 % three axes
+                        coordsOfVoxelsOfROI(i,j)= byteToNum(tResponse(1:4)); % zero index-based
+                        tResponse(1:4) = [];
+                    end
                 end
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
             
         end
@@ -571,21 +695,26 @@ classdef TBVNetworkInterface < handle
         %% Volume Data Access Queries
         % --------------------
         
-         function [ValueOfVoxelAtTime] = tGetValueOfVoxelAtTime(obj, x, y, z, timePoint)
+        function [ValueOfVoxelAtTime, xCoord, yCoord, zCoord, timePnt] = tGetValueOfVoxelAtTime(obj, x, y, z, timePoint)
             %     Send: tGetValueOfVoxelAtTime, int x, int y, int z, int timepoint
             %     Receive: int x, int y, int z, int timepoint, float ValueOfVoxelAtTime
             %     Provides the signal value as a 4-byte float value of the voxel specified by the coordinate
             %         parameters "x", "y" and "z" for the given time point (0-based indices). The given "timepoint"
             %         parameter must be smaller than the value obtained by the "tGetCurrentTimePoint" query.
             
-            %    send float ValueOfVoxelAtTime
             
-            output(1) = {x}; %(0-based indices)
-            output(2) = {y}; %(0-based indices)
-            output(3) = {z}; %(0-based indices)
+            % output var
+            output = cell(0);
+            
+            % send float ValueOfVoxelAtTime
+            output(1) = {x};
+            output(2) = {y};
+            output(3) = {z};
             output(4) = {timePoint};
             
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetValueOfVoxelAtTime', output);
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetValueOfVoxelAtTime', output);
+            
             
             if numel(tResponse)~=20
                 % Find error
@@ -595,23 +724,31 @@ classdef TBVNetworkInterface < handle
                 end
             end
             
-            
-            xCoord = byteToNum(tResponse(1:4)); % zero index-based
-            tResponse(1:4) = [];
-            yCoord = byteToNum(tResponse(1:4)); % zero index-based
-            tResponse(1:4) = [];
-            zCoord = byteToNum(tResponse(1:4)); % zero index-based
-            tResponse(1:4) = [];
-            timePnt = byteToNum(tResponse(1:4));
-            tResponse(1:4) = [];
-            
-            
-            %float ValueOfVoxelAtTime
-            ValueOfVoxelAtTime = typecast(uint8(tResponse(4:-1:1)), 'single');
+            if (reqOK && ansOK)
+                
+                xCoord = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                yCoord = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                zCoord = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                timePnt = byteToNum(tResponse(1:4));
+                tResponse(1:4) = [];
+                
+                
+                %float ValueOfVoxelAtTime
+                ValueOfVoxelAtTime = byteToFloat( tResponse );
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
         end
         
-        function valueOfAllVoxelsAtTime = tGetValueOfAllVoxelsAtTime(obj, timePoint)
+        function [valueOfAllVoxelsAtTime, timePnt] = tGetValueOfAllVoxelsAtTime(obj, timePoint)
             %             Send: tGetTimeCourseData, int x, int y, int z, int timepoint,
             %             Receive: int x, int y, int z, int timepoint, short int [dim_x*dim_y*dim_z] TimeCourseData
             %             Provides the full time course data to a given time point that is also used internally in TBV.
@@ -620,28 +757,34 @@ classdef TBVNetworkInterface < handle
             %                 specific coordinates needs to be accessed, use the term "z_coord*dim_x*dim_y +
             %                 y_coord*dim_x + x_coord". For details, see the provided example clients.
             
+            % output var
+            output = cell(0);
             
-            output = {timePoint};
+            % send timePnt
+            output(1) = {timePoint};
             
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.queryVolumeData('tGetValueOfAllVoxelsAtTime', output);
             
-            [rOK, aOK, tResponse]= obj.tbvClient.queryVolumeData('tGetValueOfAllVoxelsAtTime', output);
-            
-            TimeCourseData = [];
-            tResponse (1:4) = []; 
-            
-            tResp_swap = zeros(size(tResponse));
-            tResp_swap (2:2:end) = tResponse(1:2:end);
-            tResp_swap (1:2:end) = tResponse(2:2:end);
-            
-            valVoxel = typecast(int8(tResp_swap), 'int16');
+            if (reqOK && ansOK)
+                timePnt = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
                 
-            valueOfAllVoxelsAtTime = valVoxel;
+                tResp_swap = zeros(size(tResponse));
+                tResp_swap (2:2:end) = tResponse(1:2:end);
+                tResp_swap (1:2:end) = tResponse(2:2:end);
+                
+                valueOfAllVoxelsAtTime = typecast(int8(tResp_swap), 'int16');
+                
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
-             
         end
         
         
-        function RawValueTimeCourseData = tGetRawValueOfAllVoxelsAtTime(obj, timePoint)
+        function [RawValueTimeCourseData, timePnt] = tGetRawValueOfAllVoxelsAtTime(obj, timePoint)
             %             Send: tGetRawValueOfAllVoxelsAtTime, int timePoint
             %             Receive: short int [dim_x*dim_y*dim_z] TimeCourseData
             %             Provides raw (not pre-processed) the signal value of all voxels to a given time point that is
@@ -651,25 +794,35 @@ classdef TBVNetworkInterface < handle
             %                 use the term "z_coord*dim_x*dim_y + y_coord*dim_x + x_coord". For details, see the
             %                 provided example clients.
             
+            % output var
+            output = cell(0);
             
-            output = {timePoint};
+            % send timePnt
+            output(1) = {timePoint};
             
-            [rOK, aOK, tResponse]= obj.tbvClient.queryVolumeData('tGetRawValueOfAllVoxelsAtTime', output);
+            % send request and receive request check, answer check and message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.queryVolumeData('tGetRawValueOfAllVoxelsAtTime', output);
             
-            RawValueTimeCourseData = [];
-            
-            tResp_swap = zeros(size(tResponse));
-            tResp_swap (2:2:end) = tResponse(1:2:end);
-            tResp_swap (1:2:end) = tResponse(2:2:end);
-               
-            rawValVoxel = typecast(int8(tResp_swap), 'uint16');
+            if (reqOK && ansOK)
+              
                 
-            RawValueTimeCourseData = rawValVoxel;
+                timePnt = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                tResp_swap = zeros(size(tResponse));
+                tResp_swap (2:2:end) = tResponse(1:2:end);
+                tResp_swap (1:2:end) = tResponse(2:2:end);
+                
+                RawValueTimeCourseData = typecast(int8(tResp_swap), 'uint16');
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
+            
         end
         
         
         
-        function BetaOfVoxel = tGetBetaOfVoxel(obj, beta, x, y, z)
+        function [BetaOfVoxel, beta, x, y, z] = tGetBetaOfVoxel(obj, beta, x, y, z)
             %             Send: tGetBetaOfVoxel, int beta, int x, int y, int z
             %             Receive: int beta, int x, int y, int z, double BetaOfVoxel
             %             Provides the value of a beta indexed by the "beta" parameter as an 8-byte double value for
@@ -680,24 +833,36 @@ classdef TBVNetworkInterface < handle
             %                 "tGetCurrentNrOfPredictors" minus "tGetNrOfConfoundPredictors". For details, see the
             %                 "Export Volume Data" example client.
             
-            output(1) = {beta-1}; %{beta-1}; %(0-based indices)
+            % output var
+            output = cell(0);
+            
+            output(1) = {beta}; %(0-based indices)
             output(2) = {x}; %(0-based indices)
             output(3) = {y}; %(0-based indices)
             output(4) = {z}; %(0-based indices)
             
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetBetaOfVoxel', output);
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetBetaOfVoxel', output);
             
-            beta = byteToNum(tResponse(1:4)); % zero index-based
-            tResponse(1:4) = [];
-            x = byteToNum(tResponse(1:4)); % zero index-based
-            tResponse(1:4) = [];
-            y = byteToNum(tResponse(1:4)); % zero index-based
-            tResponse(1:4) = [];
-            z = byteToNum(tResponse(1:4)); % zero index-based
-            tResponse(1:4) = [];
+            if (reqOK && ansOK)
+                beta = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                x = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                y = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                z = byteToNum(tResponse(1:4)); % zero index-based
+                tResponse(1:4) = [];
+                
+                %double BetaOfVoxel
+                BetaOfVoxel = byteToFloat(tResponse);
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
+            end
             
-            %double BetaOfVoxel
-            BetaOfVoxel = typecast(uint8(tResponse(4:-1:1)), 'single');
             
         end
         
@@ -712,7 +877,7 @@ classdef TBVNetworkInterface < handle
             %                 of interest, the beta index must be smaller than tGetCurrentNrOfPredictors" minus
             %                 "tGetNrOfConfoundPredictors". For details, see the provided "Export Volume Data" client.
             
-            
+            % TODO
             [rOK, aOK, tResponse]= obj.tbvClient.queryVolumeData('tGetBetaMaps');
             
             BetaMaps = [];
@@ -774,32 +939,31 @@ classdef TBVNetworkInterface < handle
         
         
         % --------------------
-        %% Volume Data Access Queries
+        %% SVM Access Functions
         % --------------------
         
-        function numClasses = tGetNumberOfClasses (obj)
-            %       Send: tGetNumberOfClasses
-            %       Receive: int n_classes
-            %       Provides the number of classes for which values are provided.
-            %           In case that the real-time SVM classifier is not used, this
-            %           function returns -3; in case that the real-time SVM classifier
-            %           dialog is open but the classifier is not producing incremental
-            %           output, this function returns -2; if the classifier is
-            %           working but no output has been generated yet, this function returns 0.
-            %           You only should use the tGetCurrentClassifierOutput() function
-            %           (see below) if this function returns a positive value. Based on the
-            %           returned (positive) value (assigned to e.g. variable n_classes),
-            %           the size of the array needed for the tGetCurrentClassifierOutput()
-            %           function can be calculated as the number of pair comparisons n_pairs:
-            %   n_pairs = n_classes * (n_classes - 1) / 2
-            
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetNumberOfClasses');
-            
-            
-            numClasses = tResponse;
-            
-            
-        end
+% % %         function numClasses = tGetNumberOfClasses (obj)
+% % %             %       Send: tGetNumberOfClasses
+% % %             %       Receive: int n_classes
+% % %             %       Provides the number of classes for which values are provided.
+% % %             %           In case that the real-time SVM classifier is not used, this
+% % %             %           function returns -3; in case that the real-time SVM classifier
+% % %             %           dialog is open but the classifier is not producing incremental
+% % %             %           output, this function returns -2; if the classifier is
+% % %             %           working but no output has been generated yet, this function returns 0.
+% % %             %           You only should use the tGetCurrentClassifierOutput() function
+% % %             %           (see below) if this function returns a positive value. Based on the
+% % %             %           returned (positive) value (assigned to e.g. variable n_classes),
+% % %             %           the size of the array needed for the tGetCurrentClassifierOutput()
+% % %             %           function can be calculated as the number of pair comparisons n_pairs:
+% % %             %   n_pairs = n_classes * (n_classes - 1) / 2
+% % %             
+% % %             
+% % %             
+% % %             %TODO
+% % %             
+% % %             
+% % %         end
         
         %% Functional Connectivity Functions
         
@@ -810,18 +974,29 @@ classdef TBVNetworkInterface < handle
             % for all combinations of selected ROI?s. At least two ROI?s must be selected to
             % calculate a correlation.
             
-            output = {windowSize};
+            % output var
+            output = cell(0);
             
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetPearsonCorrelation', output);
+            % output windowSize
+            output(1) = {windowSize};
             
-            wSize = byteToNum(tResponse(1:4));
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetPearsonCorrelation', output);
             
-            idx = 1;
-            
-            for i = 5:4:length(tResponse)
-                PearsonCorrelation(idx) = typecast(uint8(tResponse(i+3:-1:i)), 'single');
-                idx = idx + 1;
+            if (reqOK && ansOK)
+                wSize = byteToNum(tResponse(1:4));
+                tResponse(1:4) = [];
+                
+                idx = 1;
+                
+                for i = 1:4:length(tResponse)
+                    PearsonCorrelation(idx) = byteToFloat(tResponse(i:i+3));
+                    idx = idx + 1;
+                end
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
+            
             
         end
         
@@ -832,21 +1007,31 @@ classdef TBVNetworkInterface < handle
             % defined by the timePoint parameter for all combinations of selected ROI?s.
             % At least two ROI?s must be selected to calculate a correlation.
             
+            % output var
+            output = cell(0);
+            
             output(1) = {windowSize};
             output(2) = {timePoint};
             
             % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetPearsonCorrelationAtTimePoint' , output);
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetPearsonCorrelationAtTimePoint' , output);
             
-            wSize = byteToNum(tResponse(1:4));
-            tPoint = byteToNum(tResponse(5:8));
-            
-            idx = 1;
-            
-            for i = 9:4:length(tResponse)
-                PearsonCorrelationAtTimePoint(idx) = typecast(uint8(tResponse(i+3:-1:i)), 'single');
-                idx = idx + 1;
+            if (reqOK && ansOK)
+                wSize = byteToNum(tResponse(1:4));
+                tPoint = byteToNum(tResponse(5:8));
+                tResponse(1:8) = [];
+                
+                idx = 1;
+                
+                for i = 1:4:length(tResponse)
+                    PearsonCorrelationAtTimePoint(idx) = byteToFloat(tResponse(i:i+3));
+                    idx = idx + 1;
+                end
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
+            
             
         end
         
@@ -858,18 +1043,31 @@ classdef TBVNetworkInterface < handle
             % in time for all combinations of selected ROI?s. At least two ROI?s must be
             % selected to calculate a correlation.
             
-            output = {windowSize};
+            % output var
+            output = cell(0);
             
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetPartialCorrelation', output);
+            output(1) = {windowSize};
             
-            wSize = byteToNum(tResponse(1:4));
+            % send request and read message/response
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetPartialCorrelation', output);
             
-            idx = 1;
             
-            for i = 5:4:length(tResponse)
-                PartialCorrelation(idx) = typecast(uint8(tResponse(i+3:-1:i)), 'single');
-                idx = idx + 1;
+            if (reqOK && ansOK)
+                
+                wSize = byteToNum(tResponse(1:4));
+                tResponse(1:4) = [];
+                idx = 1;
+                
+                for i = 1:4:length(tResponse)
+                    PartialCorrelation(idx) = byteToFloat(tResponse(i:i+3));
+                    idx = idx + 1;
+                end
+                
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
+            
+            
             
         end
         
@@ -881,21 +1079,33 @@ classdef TBVNetworkInterface < handle
             % by the timePoint parameter for all combinations of selected ROI?s. At least two
             % ROI?s must be selected to calculate a correlation.
             
+            % output var
+            output = cell(0);
+            
             output(1) = {windowSize};
             output(2) = {timePoint};
             
             % send request and read message/response
-            [rOK, aOK, tResponse]= obj.tbvClient.query('tGetPartialCorrelationAtTimePoint' , output);
+            [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetPartialCorrelationAtTimePoint' , output);
             
-            wSize = byteToNum(tResponse(1:4));
-            tPoint = byteToNum(tResponse(5:8));
-            
-            idx = 1;
-            
-            for i = 9:4:length(tResponse)
-                PartialCorrelationAtTimePoint(idx) = typecast(uint8(tResponse(i+3:-1:i)), 'single');
-                idx = idx + 1;
+            if (reqOK && ansOK)
+                
+                wSize = byteToNum(tResponse(1:4));
+                tPoint = byteToNum(tResponse(5:8));
+                tResponse(1:8) = [];
+                
+                idx = 1;
+                
+                for i = 9:4:length(tResponse)
+                    PartialCorrelationAtTimePoint(idx) = byteToFloat(tResponse(i:i+3));
+                    idx = idx + 1;
+                end
+            else
+                fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
+            
+            
+            
             
         end
         

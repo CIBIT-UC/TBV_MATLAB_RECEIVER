@@ -5,7 +5,7 @@ tic
 ROImeansM1 = zeros(1,n_rois);
 
 for i=1:n_rois
-    ROImeansM1(i) = tbvNetInt.tGetMeanOfROIAtTimePoint( i, timePoint );
+    ROImeansM1(i) = tbvNetInt.tGetMeanOfROIAtTimePoint( i - 1, timePoint );
 end
 
 timeM1 = toc;

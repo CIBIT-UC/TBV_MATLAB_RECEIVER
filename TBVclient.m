@@ -1,12 +1,24 @@
-% tbvNetworkInterface - Interface class between client and TBV server
+% TBVclient - class with methods to communicate with TBV network plugin
+%               The communication is performed based on java.net.Socket and
+%               java.nio packages
+%
 %
 % Usage:
-%   >> obj = tbvNetworkInterface (OutputStream, InputStream)
-%
+%   >> obj = TBVclient (host, port) % open connection  
+%                           
 % properties:
 %
 %
-% Author(s): Bruno Direito, Jo?o Lima, Marco Sim?es, IBILI, 12 May 2014
+% Author(s):    Bruno Direito <migueldireito@gmail.com>, 
+%               João Lima <joaoflima@gmail.com>,
+%               Marco Simões <marcoamsimoes@gmail.com>, 
+%               Alexandre Sayal <alexandresayal@gmail.com>
+%
+% Created: IBILI, 2014/05/12
+%
+% Revision 1.0  2015/11/24 
+% 
+
 
 classdef TBVclient < handle
     
@@ -79,7 +91,7 @@ classdef TBVclient < handle
             rOK = obj.sendRequest('Request Socket');
             [rOK, message] =  obj.getMessage();
             
-%             fprintf(1, ' --- request socket open: %i\n\n', rOK);
+            fprintf(1, ' --- request socket open: %i\n\n', rOK);
             
             %             %--------------------------
             %             % OPEN Execute Socket
@@ -141,7 +153,7 @@ classdef TBVclient < handle
                     
                     [aOK, message] =  obj.getMessage();
                 else
-%                     fprintf(1, ' --- request %s WAS NOT sent.\n', request);
+                    fprintf(1, ' --- request %s WAS NOT sent.\n', request);
                 end
             catch error
                 error
@@ -185,7 +197,7 @@ classdef TBVclient < handle
                     
                     [aOK, message] =  obj.getVolumeDataMessage(request);
                 else
-%                     fprintf(1, ' --- request %s WAS NOT sent.\n', request);
+                    fprintf(1, ' --- request %s WAS NOT sent.\n', request);
                 end
             catch error
                 error
@@ -282,7 +294,7 @@ classdef TBVclient < handle
                     end
                     
                     pause(.1);
-%                     disp('waiting...')
+                    disp('waiting...')
                     
                     % breaks if too much time passed
                     counter = counter + 1;
@@ -313,7 +325,7 @@ classdef TBVclient < handle
                     end
                     
                     pause(.1);
-%                     disp('waiting...')
+                    disp('waiting...')
                     
                     % breaks if too much time passed
                     counter = counter + 1;
@@ -376,7 +388,7 @@ classdef TBVclient < handle
                     end
                     
                     pause(.1);
-%                     disp('waiting...')
+                    disp('waiting...')
                     
                     % breaks if too much time passed
                     counter = counter + 1;
@@ -394,7 +406,7 @@ classdef TBVclient < handle
                 
                 %fprintf(1, '\n - message size - %s\n',msgSize);
                 msgSize = byteToNum(msgSize);
-%                 fprintf(1, '\n - message size - %d\n',msgSize);
+                fprintf(1, '\n - message size - %d\n',msgSize);
                 
                 
                 %                 % read message size

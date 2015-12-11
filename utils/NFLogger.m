@@ -18,11 +18,11 @@ classdef NFLogger < Logger
       % to allow a single instance of this class.  See description in
       % Singleton superclass.
       function newObj = NFLogger()
-          newObj.startTime = Now;
+          newObj.startTime = now;
       end
       
       function time = getTime(obj)
-         time = GetSecs() - obj.startTime; 
+         time = now - obj.startTime; 
       end
       
    end

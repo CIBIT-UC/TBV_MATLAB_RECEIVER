@@ -18,8 +18,6 @@
 % added Volume Data Access Queries
 %
 
-
-
 classdef TBVNetworkInterface < handle
     
     %% Properties
@@ -113,8 +111,7 @@ classdef TBVNetworkInterface < handle
             
             % send request and receive request check, answer check and message/response
             [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetDimsOfFunctionalData' );
-            
-            
+             
             if (reqOK && ansOK)
                 
                 % 4-byte dim_x
@@ -156,8 +153,7 @@ classdef TBVNetworkInterface < handle
                 
                 %  fprintf(1, '\n - answer received - message: %s \n\n',
                 %  projectName); %debug
-                
-                
+    
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
@@ -197,8 +193,7 @@ classdef TBVNetworkInterface < handle
             %   Provides the path of the "target folder" as specified in the TBV...
             %       file as a C string; note that the received data must point to a pre-allocated...
             %       array that is large enough for the returned path (a buffer of 513 bytes is...
-            %       recommended). The target folder can be used to export data for custom processing.
-            
+            %       recommended). The target folder can be used to export data for custom processing.            
             
             % send request and receive request check, answer check and message/response
             [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetTargetFolder' );
@@ -214,8 +209,7 @@ classdef TBVNetworkInterface < handle
                 
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
-            end
-            
+            end           
             
         end
         
@@ -244,8 +238,7 @@ classdef TBVNetworkInterface < handle
                 
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
-            end
-            
+            end          
             
         end
         
@@ -291,10 +284,8 @@ classdef TBVNetworkInterface < handle
                 
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
-            end
-            
-            
-            
+            end           
+                    
         end
         
         function currentNrOfPredictors = tGetCurrentNrOfPredictors(obj)
@@ -311,13 +302,11 @@ classdef TBVNetworkInterface < handle
             [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetCurrentNrOfPredictors');
             
             if (reqOK && ansOK)
-                
                 currentNrOfPredictors = byteToNum(tResponse);
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
-            
-            
+                 
         end
         
         function nrOfConfoundPredictors = tGetNrOfConfoundPredictors(obj)
@@ -331,11 +320,11 @@ classdef TBVNetworkInterface < handle
             
             if (reqOK && ansOK)
                 %  int nrOfConfoundPredictors
-                nrOfConfoundPredictors = byteToNum(tResponse);
-                
+                nrOfConfoundPredictors = byteToNum(tResponse);  
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
+            
         end
         
         
@@ -368,17 +357,13 @@ classdef TBVNetworkInterface < handle
                 timepoint = byteToNum(tResponse(1:4)); % zero index-based
                 tResponse(1:4) = [];
                 
-                % float valueOfDesignMatrix
-                %%%%%%%%valueOfDesignMatrix = typecast(uint8(tResponse(4:-1:1)), 'single');
-                
+                % float valueOfDesignMatrix              
                 valueOfDesignMatrix = byteToFloat( tResponse );
                 
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
-            
-            
-            
+              
         end
         
         function nrOfContrasts = tGetNrOfContrasts(obj)
@@ -452,16 +437,13 @@ classdef TBVNetworkInterface < handle
                     fprintf(1, '%s. \n', responseString)
                 end
             end
-            
-            
+                     
             if (reqOK && ansOK)
                 % int nrOfROI
                 nrOfROI = byteToNum(tResponse(1:4)); % zero index-based
                 tResponse(1:4) = [];
                 
-                % float MeanOfROI
-                % meanOfROI = typecast(uint8(tResponse(4:-1:1)), 'single');
-                
+                % float MeanOfROI              
                 meanOfROI = byteToFloat( tResponse );
                 
                 % fprintf(1, '\n - answer received - message: ROI # %i, meanvalue - %i \n\n',nrOfROI, meanOfROI);
@@ -513,7 +495,6 @@ classdef TBVNetworkInterface < handle
                 tResponse(1:4) = [];
                 
                 % float MeanOfROIAtTimePoint
-                %%%meanOfROI = typecast(uint8(tResponse(4:-1:1)), 'single');
                 meanOfROI = byteToFloat( tResponse );
                 
                 % fprintf(1, '\n - answer received - message: ROI # %i,
@@ -522,8 +503,7 @@ classdef TBVNetworkInterface < handle
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
-            
-            
+               
         end
         
         function NrOfVoxelsOfROI = tGetNrOfVoxelsOfROI(obj, nrOfROI)
@@ -548,10 +528,9 @@ classdef TBVNetworkInterface < handle
                 nrROI = byteToNum(tResponse(1:4));
                 tResponse(1:4) = [];
                 
-                NrOfVoxelsOfROI = byteToNum( tResponse);
+                NrOfVoxelsOfROI = byteToNum( tResponse );
                 %   fprintf(1, '\n - answer received - message: ROI # %i, value - %i \n\n',nrROI, nrVoxOfROI);
-                
-                
+                   
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
@@ -577,8 +556,7 @@ classdef TBVNetworkInterface < handle
             
             % send request and receive request check, answer check and message/response
             [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetBetaOfROI' , output);
-            
-            
+             
             if (reqOK && ansOK)
                 
                 % int ROI
@@ -615,7 +593,6 @@ classdef TBVNetworkInterface < handle
             output(1) = {nrOfROI};
             output(2) = {voxel};
             
-            
             % send request and receive request check, answer check and message/response
             [reqOK, ansOK, tResponse]= obj.tbvClient.query('tGetCoordsOfVoxelOfROI' , output);
             
@@ -645,9 +622,7 @@ classdef TBVNetworkInterface < handle
             
             
         end
-        
-        
-        
+         
         function [coordsOfVoxelsOfROI, nrOfROI] = tGetAllCoordsOfVoxelsOfROI(obj, nrOfROI)
             %   Send: tGetBetaOfROI, int roi
             %   Receive: int roi, coordsOfVoxelsOfROI
@@ -738,7 +713,6 @@ classdef TBVNetworkInterface < handle
                 timePnt = byteToNum(tResponse(1:4));
                 tResponse(1:4) = [];
                 
-                
                 %float ValueOfVoxelAtTime
                 ValueOfVoxelAtTime = byteToFloat( tResponse );
                 
@@ -749,13 +723,13 @@ classdef TBVNetworkInterface < handle
         end
         
         function [valueOfAllVoxelsAtTime, timePnt] = tGetValueOfAllVoxelsAtTime(obj, timePoint)
-            %             Send: tGetTimeCourseData, int x, int y, int z, int timepoint,
-            %             Receive: int x, int y, int z, int timepoint, short int [dim_x*dim_y*dim_z] TimeCourseData
-            %             Provides the full time course data to a given time point that is also used internally in TBV.
-            %                 Individual values are 2-byte short integers. Note that the "timepoint" parameter must be
-            %                 smaller than the value returned by the "tGetCurrentTimePoint()" function. If a voxel with
-            %                 specific coordinates needs to be accessed, use the term "z_coord*dim_x*dim_y +
-            %                 y_coord*dim_x + x_coord". For details, see the provided example clients.
+            %	Send: tGetTimeCourseData, int x, int y, int z, int timepoint,
+            %   Receive: int x, int y, int z, int timepoint, short int [dim_x*dim_y*dim_z] TimeCourseData
+            %   	Provides the full time course data to a given time point that is also used internally in TBV.
+            %           Individual values are 2-byte short integers. Note that the "timepoint" parameter must be
+            %       	smaller than the value returned by the "tGetCurrentTimePoint()" function. If a voxel with
+            %       	specific coordinates needs to be accessed, use the term "z_coord*dim_x*dim_y +
+            %           y_coord*dim_x + x_coord". For details, see the provided example clients.
             
             % output var
             output = cell(0);
@@ -775,8 +749,7 @@ classdef TBVNetworkInterface < handle
                 tResp_swap (1:2:end) = tResponse(2:2:end);
                 
                 valueOfAllVoxelsAtTime = typecast(int8(tResp_swap), 'int16');
-                
-                
+                 
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
@@ -805,7 +778,6 @@ classdef TBVNetworkInterface < handle
             
             if (reqOK && ansOK)
               
-                
                 timePnt = byteToNum(tResponse(1:4)); % zero index-based
                 tResponse(1:4) = [];
                 
@@ -819,9 +791,7 @@ classdef TBVNetworkInterface < handle
             end
             
         end
-        
-        
-        
+         
         function [BetaOfVoxel, beta, x, y, z] = tGetBetaOfVoxel(obj, beta, x, y, z)
             %             Send: tGetBetaOfVoxel, int beta, int x, int y, int z
             %             Receive: int beta, int x, int y, int z, double BetaOfVoxel
@@ -862,8 +832,7 @@ classdef TBVNetworkInterface < handle
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
-            
-            
+                  
         end
         
         function BetaMaps = tGetBetaMaps(obj)
@@ -883,7 +852,6 @@ classdef TBVNetworkInterface < handle
             BetaMaps = [];
             
         end
-        
         
         function MapValueOfVoxel = tGetMapValueOfVoxel (obj, map, x, y, z)
             %             Send: tGetMapValueOfVoxel, int map, int x, int y, int z
@@ -913,11 +881,9 @@ classdef TBVNetworkInterface < handle
             tResponse(1:4) = [];
             
             %float BetaOfVoxel
-            MapValueOfVoxel = typecast(uint8(tResponse(4:-1:1)), 'single');
-            
-            
+            MapValueOfVoxel = byteToFloat(tResponse);
+                    
         end
-        
         
         function ContrastMaps = tGetContrastMaps(obj)
             %             Send: tGetContrastMaps
@@ -931,39 +897,12 @@ classdef TBVNetworkInterface < handle
             %                 "tGetNrOfContrasts" query. For details, see the provided "Export Volume Data" client.
             
             [rOK, aOK, tResponse]= obj.tbvClient.query('tGetContrastMaps');
-            
-            
+                
             ContrastMaps = [];
             
         end
         
-        
         % --------------------
-        %% SVM Access Functions
-        % --------------------
-        
-% % %         function numClasses = tGetNumberOfClasses (obj)
-% % %             %       Send: tGetNumberOfClasses
-% % %             %       Receive: int n_classes
-% % %             %       Provides the number of classes for which values are provided.
-% % %             %           In case that the real-time SVM classifier is not used, this
-% % %             %           function returns -3; in case that the real-time SVM classifier
-% % %             %           dialog is open but the classifier is not producing incremental
-% % %             %           output, this function returns -2; if the classifier is
-% % %             %           working but no output has been generated yet, this function returns 0.
-% % %             %           You only should use the tGetCurrentClassifierOutput() function
-% % %             %           (see below) if this function returns a positive value. Based on the
-% % %             %           returned (positive) value (assigned to e.g. variable n_classes),
-% % %             %           the size of the array needed for the tGetCurrentClassifierOutput()
-% % %             %           function can be calculated as the number of pair comparisons n_pairs:
-% % %             %   n_pairs = n_classes * (n_classes - 1) / 2
-% % %             
-% % %             
-% % %             
-% % %             %TODO
-% % %             
-% % %             
-% % %         end
         
         %% Functional Connectivity Functions
         
@@ -989,7 +928,7 @@ classdef TBVNetworkInterface < handle
                 idx = 1;
                 
                 for i = 1:4:length(tResponse)
-                    PearsonCorrelation(idx) = byteToFloat(tResponse(i:i+3));
+                    PearsonCorrelation(idx) = (tResponse(i:i+3));
                     idx = idx + 1;
                 end
                 
@@ -1034,8 +973,7 @@ classdef TBVNetworkInterface < handle
             
             
         end
-        
-        
+    
         function [wSize,PartialCorrelation] = tGetPartialCorrelation(obj, windowSize)
             % Send: tGetPartialCorrelation, int windowSize
             % Receive: float PartialCorrelation[ncon]
@@ -1065,9 +1003,7 @@ classdef TBVNetworkInterface < handle
                 
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
-            end
-            
-            
+            end  
             
         end
         
@@ -1077,7 +1013,7 @@ classdef TBVNetworkInterface < handle
             % Receive: float PartialCorrelation[ncon]
             % Provides the calculated partial correlation results of the point in time defined
             % by the timePoint parameter for all combinations of selected ROI?s. At least two
-            % ROI?s must be selected to calculate a correlation.
+            % ROIs must be selected to calculate a correlation.
             
             % output var
             output = cell(0);
@@ -1096,22 +1032,16 @@ classdef TBVNetworkInterface < handle
                 
                 idx = 1;
                 
-                for i = 9:4:length(tResponse)
+                for i = 1:4:length(tResponse)
                     PartialCorrelationAtTimePoint(idx) = byteToFloat(tResponse(i:i+3));
                     idx = idx + 1;
                 end
             else
                 fprintf(1, '\n - answer not received - request: %i, answer: %i  \n\n',reqOK, ansOK);
             end
-            
-            
-            
-            
+             
         end
-        
-        
-        
+         
     end
-    
-    
+ 
 end
